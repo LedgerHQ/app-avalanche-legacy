@@ -19,6 +19,8 @@ static size_t address_ok(void) {
         return provide_address(G_io_apdu_buffer, &G.pkh);
       case PUBKEY_STATE_EVM:
         return provide_evm_address(G_io_apdu_buffer, &G.ext_public_key, &G.pkh, true);
+      default:
+        THROW(EXC_SECURITY);
     }
 }
 

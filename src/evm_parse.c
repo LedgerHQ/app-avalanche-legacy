@@ -945,6 +945,7 @@ rebranch:
   case ABISTATE_DONE:
     return PARSE_RV_DONE;
   }
+  return PARSE_RV_INVALID;
 }
 
 enum parse_rv parse_assetCall_data(struct EVM_assetCall_state *const state, parser_input_meta_state_t *const input, evm_parser_meta_state_t *const meta) {
@@ -1010,4 +1011,5 @@ enum parse_rv parse_assetCall_data(struct EVM_assetCall_state *const state, pars
     case ASSETCALL_DONE:
       return PARSE_RV_DONE;
     }
+    return PARSE_RV_INVALID;
 }
