@@ -19,7 +19,7 @@ void init_globals(void);
 typedef struct {
     uint8_t requested_num_signatures;
     bip32_path_t bip32_path_prefix;
-    uint8_t final_hash[SIGN_HASH_SIZE];
+    sign_hash_t final_hash;
     buffer_t final_hash_as_buffer;
 
     public_key_hash_t change_address;
@@ -35,7 +35,7 @@ typedef struct {
 
 typedef struct {
     bip32_path_t bip32_path;
-    uint8_t final_hash[SIGN_HASH_SIZE];
+    sign_hash_t final_hash;
     buffer_t final_hash_as_buffer;
     cx_sha3_t tx_hash_state;
     struct {
@@ -144,9 +144,6 @@ static inline void throw_stack_size(void) {
 #define STRINGIFY(x) #x
 #define TOSTRING(x)  STRINGIFY(x)
 #define AT           __FILE__ ":" TOSTRING(__LINE__)
-inline void dbgout(char *at) {
-    int i;
-    PRINTF("%s - sp %p spg %p %d\n", at, &i, &app_stack_canary, app_stack_canary);
-}
+void dbgout(char *at);
 #define DBGOUT() dbgout(AT)
 #endif

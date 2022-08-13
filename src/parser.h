@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "identifier.h"
 #include "uint256.h"
 #include "network_info.h"
 
@@ -61,10 +62,6 @@ DEFINE_FIXED_BE(uint32_t);
 DEFINE_FIXED_BE(uint64_t);
 DEFINE_FIXED_BE(uint256_t);
 
-typedef struct {
-    uint8_t val[32];
-} Id32;
-
 DEFINE_FIXED(Id32);
 
 typedef struct {
@@ -95,6 +92,16 @@ struct SECP256K1OutputOwners_state {
     };
 };
 
+struct SubnetAuth_state {
+  int state;
+  uint32_t sigindices_i;
+  uint32_t sigindices_n;
+  union {
+      NUMBER_STATES;
+  };
+};
+
+
 struct StakeableLockOutput_state {
     int state;
     uint64_t locktime;
@@ -115,6 +122,41 @@ struct Output_state {
 };
 
 DEFINE_FIXED(blockchain_id_t);
+
+#define GEN_HASH_SIZE 32
+
+typedef uint8_t genhash_t[GEN_HASH_SIZE];
+
+struct Genesis_state {
+  int state;
+  union {
+    struct uint32_t_state gen_n_state;
+    struct {
+      size_t gen_n;
+      size_t gen_i;
+      cx_sha256_t genhash_state;
+    };
+  };
+};
+
+#define CHAIN_NAME_MAX_SIZE 128
+
+typedef struct {
+    size_t buffer_size;
+    uint8_t buffer[CHAIN_NAME_MAX_SIZE];
+} chainname_prompt_t;
+
+struct ChainName_state{
+  int state;
+  union {
+    struct uint16_t_state uint16State;
+    struct {
+      chainname_prompt_t name;
+      uint16_t chainN_i;
+    };
+  };
+};
+
 
 struct TransferableOutput_state {
     int state;
@@ -289,12 +331,41 @@ struct AddValidatorTransactionState {
   };
 };
 
+struct AddSNValidatorTransactionState {
+  int state;
+  union {
+        struct Validator_state validatorState;
+        struct Id32_state id32State;
+        struct SubnetAuth_state subnetauthState;
+  };
+};
+
+struct CreateSubnetTransactionState {
+  int state;
+  union {
+        struct SECP256K1OutputOwners_state ownersState;
+  };
+};
+
 struct AddDelegatorTransactionState {
   int state;
   union {
         struct uint32_t_state uint32State;
         struct Id32_state id32State;
         struct TransferableOutputs_state outputsState;
+  };
+};
+
+struct CreateChainTransactionState {
+  int state;
+  uint32_t fxid_n;
+  uint32_t fxid_i;
+  union {
+        struct uint32_t_state uint32State;
+        struct Id32_state id32State;
+        struct ChainName_state  chainnameState;
+        struct Genesis_state genesisState;
+        struct SubnetAuth_state subnetauthState;
   };
 };
 
@@ -310,6 +381,9 @@ struct TransactionState {
     struct ImportTransactionState importTxState;
     struct ExportTransactionState exportTxState;
     struct AddValidatorTransactionState addValidatorTxState;
+    struct AddSNValidatorTransactionState addSNValidatorTxState;
+    struct CreateChainTransactionState createChainTxState;
+    struct CreateSubnetTransactionState createSubnetTxState;
     struct AddDelegatorTransactionState addDelegatorTxState;
     struct CChainImportTransactionState cChainImportState;
     struct CChainExportTransactionState cChainExportState;
@@ -351,6 +425,10 @@ typedef struct {
 } address_prompt_t;
 
 typedef struct {
+    uint8_t buffer[GEN_HASH_SIZE];
+} gendata_prompt_t;
+
+typedef struct {
     uint64_t amount;
     uint64_t until;
 } locked_prompt_t;
@@ -367,7 +445,9 @@ typedef struct {
     } data;
 } prompt_entry_t;
 
-#define TRANSACTION_PROMPT_MAX_BATCH_SIZE 5
+#ifndef PROMPT_MAX_BATCH_SIZE
+#  error "PROMPT_MAX_BATCH_SIZE not set!"
+#endif
 
 enum transaction_x_chain_type_id_t {
     TRANSACTION_X_CHAIN_TYPE_ID_BASE            = 0x00,
@@ -376,10 +456,13 @@ enum transaction_x_chain_type_id_t {
 };
 
 enum transaction_p_chain_type_id_t {
-    TRANSACTION_P_CHAIN_TYPE_ID_ADD_VALIDATOR   = 0x0c,
-    TRANSACTION_P_CHAIN_TYPE_ID_ADD_DELEGATOR   = 0x0e,
-    TRANSACTION_P_CHAIN_TYPE_ID_IMPORT          = 0x11,
-    TRANSACTION_P_CHAIN_TYPE_ID_EXPORT          = 0x12
+    TRANSACTION_P_CHAIN_TYPE_ID_ADD_VALIDATOR    = 0x0c,
+    TRANSACTION_P_CHAIN_TYPE_ID_ADD_DELEGATOR    = 0x0e,
+    TRANSACTION_P_CHAIN_TYPE_ID_ADD_SN_VALIDATOR = 0x0d,
+    TRANSACTION_P_CHAIN_TYPE_ID_CREATE_CHAIN     = 0x0f,
+    TRANSACTION_P_CHAIN_TYPE_ID_CREATE_SUBNET    = 0x10,
+    TRANSACTION_P_CHAIN_TYPE_ID_IMPORT           = 0x11,
+    TRANSACTION_P_CHAIN_TYPE_ID_EXPORT           = 0x12
 };
 
 enum transaction_c_chain_type_id_t {
@@ -402,8 +485,8 @@ enum chain_role {
 typedef struct  {
   size_t count;
   size_t flushIndex;
-  char const *labels[TRANSACTION_PROMPT_MAX_BATCH_SIZE + 1]; // For NULL at end
-  prompt_entry_t entries[TRANSACTION_PROMPT_MAX_BATCH_SIZE];
+  char const *labels[PROMPT_MAX_BATCH_SIZE + 1]; // For NULL at end
+  prompt_entry_t entries[PROMPT_MAX_BATCH_SIZE];
 } prompt_batch_t;
 
 typedef struct {

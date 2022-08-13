@@ -1,9 +1,9 @@
 import {
   BIPPath,
+  checkSignTransaction,
   chunkPrompts,
   expect,
   finalizePrompt,
-  flowMultiPrompt,
 } from "./common";
 
 const fujiAssetId = [
@@ -65,22 +65,15 @@ describe("P-chain import and export tests", () => {
       0x00, 0x00, 0x00, 0x00,
     ]);
     const pathPrefix = "44'/9000'/0'";
-    const pathSuffixes = ["0/0", "0/1", "100/100"];
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
     const signPrompt = {header:"Sign",body:"Import"};
     const importPrompt = {header:"P chain import",body:"19999.999 AVAX to fuji18jma8ppw3nhx5r4ap8clazz0dps7rv5u6wmu4t"};
     const feePrompt = {header:"Fee",body:"15188.373088832 AVAX"};
     const prompts = chunkPrompts([
       signPrompt, importPrompt, feePrompt
-    ]).concat([[finalizePrompt]]);
+    ]).concat([finalizePrompt]);
 
-    const ui = await flowMultiPrompt(this.speculos, prompts);
-    const sigPromise = this.ava.signTransaction(
-      BIPPath.fromString(pathPrefix),
-      pathSuffixes.map(x => BIPPath.fromString(x, false)),
-      txn,
-    );
-    await sigPromise;
-    await ui.promptsPromise;
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
   });
 
   it('can sign a transaction exporting to X-chain from P-chain', async function () {
@@ -132,69 +125,47 @@ describe("P-chain import and export tests", () => {
       0x6d, 0x55, 0xa9, 0x55,
     ]);
     const pathPrefix = "44'/9000'/0'";
-    const pathSuffixes = ["0/0", "0/1", "100/100"];
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
     const signPrompt = {header:"Sign",body:"Export"};
     const transferPrompt = {header:"Transfer",body:'0.000012345 AVAX to fuji1cv6yz28qvqfgah34yw3y53su39p6kzzehw5pj3'};
     const exportPrompt = {header:"P chain export",body:'0.000012345 AVAX to fuji12yp9cc0melq83a5nxnurf0nd6fk4t224unmnwx'};
     const feePrompt = {header:"Fee",body:"0.123432099 AVAX"};
     const prompts = chunkPrompts([
       signPrompt, transferPrompt, exportPrompt, feePrompt
-    ]).concat([[finalizePrompt]]);
+    ]).concat([finalizePrompt]);
 
-    const ui = await flowMultiPrompt(this.speculos, prompts);
-    const sigPromise = this.ava.signTransaction(
-      BIPPath.fromString(pathPrefix),
-      pathSuffixes.map(x => BIPPath.fromString(x, false)),
-      txn,
-    );
-    await sigPromise;
-    await ui.promptsPromise;
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
   });
 
   it('can sign a transaction exporting to C-chain from P-chain', async function() {
     // Collected from avalanchejs examples:
     const txn = Buffer.from('0000000000120000303900000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000dbcf890f77f49b96857648b72b77f9f82937f28a68704af05da0dc12ba53f2db0000000500470de4df8200000000000100000000000000000000000000000000000000000000000000000000000000000000000000000001dbcf890f77f49b96857648b72b77f9f82937f28a68704af05da0dc12ba53f2db00000005002386f26fc10000000000010000000000000056506c6174666f726d564d207574696c697479206d6574686f64206275696c644578706f7274547820746f206578706f727420415641582066726f6d2074686520502d436861696e20746f2074686520432d436861696e9d0775f450604bd2fbc49ce0c5c1c6dfeb2dc2acb8c92c26eeae6e6df4502b1900000001dbcf890f77f49b96857648b72b77f9f82937f28a68704af05da0dc12ba53f2db00000007006a94d713a83600000000000000000000000001000000013cb7d3842e8cee6a0ebd09f1fe884f6861e1b29c', 'hex');
     const pathPrefix = "44'/9000'/0'";
-    const pathSuffixes = ["0/0", "0/1", "100/100"];
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
     const signPrompt = {header:"Sign",body:"Export"};
     const exportPrompt = {header:"P chain export",body:'29999999 AVAX to local18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u'};
     const feePrompt = {header:"Fee",body:"1 AVAX"};
     const prompts = chunkPrompts([
       signPrompt, exportPrompt, feePrompt
-    ]).concat([[finalizePrompt]]);
+    ]).concat([finalizePrompt]);
 
-    const ui = await flowMultiPrompt(this.speculos, prompts);
-    const sigPromise = this.ava.signTransaction(
-      BIPPath.fromString(pathPrefix),
-      pathSuffixes.map(x => BIPPath.fromString(x, false)),
-      txn,
-    );
-    await sigPromise;
-    await ui.promptsPromise;
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
   });
 
   it('can sign a transaction importing to P-chain from C-chain', async function() {
     // Collected from avalanchejs examples:
     const txn = Buffer.from('000000000000000030399d0775f450604bd2fbc49ce0c5c1c6dfeb2dc2acb8c92c26eeae6e6df4502b190000000000000000000000000000000000000000000000000000000000000000000000011d77d94aaefd25c0c2544acaff85290690737d7f0234d3fc754276b40f98d5d900000000dbcf890f77f49b96857648b72b77f9f82937f28a68704af05da0dc12ba53f2db00000005006a94d713a836000000000100000000000000018db97c7cece249c2b98bdc0226cc4c2a57bf52fc00619ac63f788a00dbcf890f77f49b96857648b72b77f9f82937f28a68704af05da0dc12ba53f2db', 'hex');
     const pathPrefix = "44'/9000'/0'";
-    const pathSuffixes = ["0/0", "0/1", "100/100"];
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
     const signPrompt = {header:"Sign",body:"Import"};
     const importPrompt = {header:"Importing",body:'27473249 AVAX to local13kuhcl8vufyu9wvtmspzdnzv9ftm75hunmtqe9'};
     const feePrompt = {header:"Fee",body:"2526750 AVAX"};
     const prompts = chunkPrompts([
       signPrompt, importPrompt, feePrompt
-    ]).concat([[finalizePrompt]]);
+    ]).concat([finalizePrompt]);
 
-    const ui = await flowMultiPrompt(this.speculos, prompts);
-    const sigPromise = this.ava.signTransaction(
-      BIPPath.fromString(pathPrefix),
-      pathSuffixes.map(x => BIPPath.fromString(x, false)),
-      txn,
-    );
-    await sigPromise;
-    await ui.promptsPromise;
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
   });
-
 });
 describe('Staking tests', async function () {
   it('can sign an add validator transaction', async function () {
@@ -223,7 +194,6 @@ describe('Staking tests', async function () {
       0x92, 0x57, 0x82, 0x4f, 0xf2, 0x1c, 0x8e, 0x3e,
       0x6f, 0x7b, 0x63, 0x2a, 0xc3, 0x06, 0xe1, 0x14,
       0x46, 0xee, 0x54, 0x0d, 0x34, 0x71, 0x1a, 0x15,
-      // addresses?
       0x00, 0x00, 0x00, 0x01,
 
       ... localAssetId,
@@ -248,6 +218,7 @@ describe('Staking tests', async function () {
       0x00, 0x00, 0x00, 0x00, 0x5f, 0x49, 0x7d, 0xc6,
       // Weight
       0x00, 0x00, 0x01, 0xd1, 0xa9, 0x4a, 0x20, 0x00,
+
       // Stake
       0x00, 0x00, 0x00, 0x01,
       // Stake asset
@@ -266,10 +237,11 @@ describe('Staking tests', async function () {
       0xbe, 0x82, 0xec, 0xc0, 0x0c, 0x34, 0xf3, 0x61,
       0xed, 0xa8, 0xeb, 0x30, 0xfb, 0x5a, 0x71, 0x5c,
       // Shares
-      0x00, 0x00, 0x00, 0x64]);
+      0x00, 0x00, 0x00, 0x64
+    ]);
 
     const pathPrefix = "44'/9000'/0'";
-    const pathSuffixes = ["0/0", "0/1", "100/100"];
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
     const prompts = chunkPrompts([
       {header: 'Sign', body: 'Add Validator'},
       {header: 'Transfer', body: '3.999 AVAX to local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n'},
@@ -281,16 +253,273 @@ describe('Staking tests', async function () {
       {header: 'Rewards To', body: 'local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n' },
       {header: 'Delegation Fee', body: '0.01%' },
       {header: 'Fee',body: '0.001 AVAX'},
-    ]).concat([[finalizePrompt]]);
-    const ui = await flowMultiPrompt(this.speculos, prompts);
-    const sigPromise = this.ava.signTransaction(
-      BIPPath.fromString(pathPrefix),
-      pathSuffixes.map(x => BIPPath.fromString(x, false)),
-      txn,
-    );
-    await sigPromise;
-    await ui.promptsPromise;
+    ]).concat([finalizePrompt]);
+
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
   });
+
+  it('can sign an add subnet validator transaction', async function () {
+    const txn = Buffer.from([
+      0x00, 0x00,
+      0x00, 0x00, 0x00, 0x0d, 0x00, 0x00, 0x30, 0x39,
+      // blockchain ID
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      // number of outputs
+      0x00, 0x00, 0x00, 0x01,
+      // output
+      ... localAssetId,
+      0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00,
+      0xee, 0x5b, 0xe5, 0xc0, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x01, 0xda, 0x2b, 0xee, 0x01,
+      0xbe, 0x82, 0xec, 0xc0, 0x0c, 0x34, 0xf3, 0x61,
+      0xed, 0xa8, 0xeb, 0x30, 0xfb, 0x5a, 0x71, 0x5c,
+      // number of inputs
+      0x00, 0x00, 0x00, 0x01,
+      // input
+      0xdf, 0xaf, 0xbd, 0xf5, 0xc8, 0x1f, 0x63, 0x5c,
+      0x92, 0x57, 0x82, 0x4f, 0xf2, 0x1c, 0x8e, 0x3e,
+      0x6f, 0x7b, 0x63, 0x2a, 0xc3, 0x06, 0xe1, 0x14,
+      0x46, 0xee, 0x54, 0x0d, 0x34, 0x71, 0x1a, 0x15,
+      0x00, 0x00, 0x00, 0x01,
+
+      ... localAssetId,
+
+      0x00, 0x00, 0x00, 0x05,
+
+      // Have to tweak this up from the serialization reference, because we need
+      // enough to stake.
+      // 0x00, 0x00, 0x00, 0x00, 0xee, 0x6b, 0x28, 0x00,
+      0x00, 0x00, 0x01, 0xd2, 0x97, 0xb5, 0x48, 0x00,
+      0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x00,
+      // memo length
+      0x00, 0x00, 0x00, 0x00,
+      // Node ID
+      0xe9, 0x09, 0x4f, 0x73, 0x69, 0x80, 0x02, 0xfd,
+      0x52, 0xc9, 0x08, 0x19, 0xb4, 0x57, 0xb9, 0xfb,
+      0xc8, 0x66, 0xab, 0x80,
+      // StartTime
+      0x00, 0x00, 0x00, 0x00, 0x5f, 0x21, 0xf3, 0x1d,
+      // EndTime
+      0x00, 0x00, 0x00, 0x00, 0x5f, 0x49, 0x7d, 0xc6,
+      // Weight
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xd4, 0x31,
+      // SubnetID
+      0x58, 0xb1, 0x09, 0x28, 0x71, 0xdb, 0x85, 0xbc,
+      0x75, 0x27, 0x42, 0x05, 0x4e, 0x2e, 0x8b, 0xe0,
+      0xad, 0xf8, 0x16, 0x6e, 0xc1, 0xf0, 0xf0, 0x76,
+      0x9f, 0x47, 0x79, 0xf1, 0x4c, 0x71, 0xd7, 0xeb,
+      // SubnetAuth
+      // SubnetAuth TypeID
+      0x00, 0x00, 0x00, 0x0a,
+      // SigIndices length
+      0x00, 0x00, 0x00, 0x01,
+      // SigIndices
+      0x00, 0x00, 0x00, 0x00
+    ]);
+
+    const pathPrefix = "44'/9000'/0'";
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
+    // Need to add headers for SubnetID and Sigindices?
+    const prompts = chunkPrompts([
+      {header: 'Sign', body: 'Add Subnet Validator'},
+      {header: 'Validator', body: 'NodeID-NFBbbJ4qCmNaCzeW7sxErhvWqvEQMnYcN' },
+      {header: 'Start time', body: '2020-07-29 22:07:25 UTC' },
+      {header: 'End time', body: '2020-08-28 21:57:26 UTC' },
+      {header: 'Weight', body: '54321' },
+      {header: 'Subnet', body: 'g4WNtLL98APX666NZGfjoDDsr6fsS27NsjhuCSTAeX5Dtx1Nb' },
+      {header: 'Fee', body: '2000.001 AVAX'}
+    ]).concat([finalizePrompt]);
+
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
+  });
+
+it('can sign a create subnet transaction', async function () {
+    const txn = Buffer.from([
+      0x00, 0x00,
+      0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x30, 0x39,
+      // blockchain ID
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      // number of outputs
+      0x00, 0x00, 0x00, 0x01,
+      // output
+      ... localAssetId,
+      0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00,
+      0xee, 0x5b, 0xe5, 0xc0, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x01, 0xda, 0x2b, 0xee, 0x01,
+      0xbe, 0x82, 0xec, 0xc0, 0x0c, 0x34, 0xf3, 0x61,
+      0xed, 0xa8, 0xeb, 0x30, 0xfb, 0x5a, 0x71, 0x5c,
+      // number of inputs
+      0x00, 0x00, 0x00, 0x01,
+      // input
+      0xdf, 0xaf, 0xbd, 0xf5, 0xc8, 0x1f, 0x63, 0x5c,
+      0x92, 0x57, 0x82, 0x4f, 0xf2, 0x1c, 0x8e, 0x3e,
+      0x6f, 0x7b, 0x63, 0x2a, 0xc3, 0x06, 0xe1, 0x14,
+      0x46, 0xee, 0x54, 0x0d, 0x34, 0x71, 0x1a, 0x15,
+      0x00, 0x00, 0x00, 0x01,
+
+      ... localAssetId,
+
+      0x00, 0x00, 0x00, 0x05,
+
+      // Have to tweak this up from the serialization reference, because we need
+      // enough to stake.
+      // 0x00, 0x00, 0x00, 0x00, 0xee, 0x6b, 0x28, 0x00,
+      0x00, 0x00, 0x01, 0xd2, 0x97, 0xb5, 0x48, 0x00,
+      0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x00,
+      // memo length
+      0x00, 0x00, 0x00, 0x00,
+
+      // RewardsOwner type_id
+      0x00, 0x00, 0x00, 0x0b,
+      // locktime:
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      // threshold:
+      0x00, 0x00, 0x00, 0x01,
+      // number of addresses:
+      0x00, 0x00, 0x00, 0x01,
+      //addr[0]:
+      0xda, 0x2b, 0xee, 0x01,
+      0xbe, 0x82, 0xec, 0xc0, 0x0c, 0x34, 0xf3, 0x61,
+      0xed, 0xa8, 0xeb, 0x30, 0xfb, 0x5a, 0x71, 0x5c]);
+
+      const pathPrefix = "44'/9000'/0'";
+      const pathSuffixes = ["0/0", "0/1", "1/100"];
+      // Need to add headers for SubnetID and Sigindices?
+      const prompts = chunkPrompts([
+        {header: 'Sign', body: 'Create Subnet'},
+        {header: 'Threshold', body: '1'},
+        {header: 'Address', body: 'local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n' },
+        {header: 'Fee', body: '2000.001 AVAX'}
+      ]).concat([finalizePrompt]);
+      await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
+  });
+
+  it('can sign a create chain transaction', async function () {
+    const txn = Buffer.from([
+      0x00, 0x00,
+      0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x30, 0x39,
+      // blockchain ID
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      // number of outputs
+      0x00, 0x00, 0x00, 0x01,
+      // output
+      ... localAssetId,
+      0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00,
+      0xee, 0x5b, 0xe5, 0xc0, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x01, 0xda, 0x2b, 0xee, 0x01,
+      0xbe, 0x82, 0xec, 0xc0, 0x0c, 0x34, 0xf3, 0x61,
+      0xed, 0xa8, 0xeb, 0x30, 0xfb, 0x5a, 0x71, 0x5c,
+      // number of inputs
+      0x00, 0x00, 0x00, 0x01,
+      // input
+      0xdf, 0xaf, 0xbd, 0xf5, 0xc8, 0x1f, 0x63, 0x5c,
+      0x92, 0x57, 0x82, 0x4f, 0xf2, 0x1c, 0x8e, 0x3e,
+      0x6f, 0x7b, 0x63, 0x2a, 0xc3, 0x06, 0xe1, 0x14,
+      0x46, 0xee, 0x54, 0x0d, 0x34, 0x71, 0x1a, 0x15,
+      0x00, 0x00, 0x00, 0x01,
+
+      ... localAssetId,
+
+      0x00, 0x00, 0x00, 0x05,
+
+      // Have to tweak this up from the serialization reference, because we need
+      // enough to stake.
+      // 0x00, 0x00, 0x00, 0x00, 0xee, 0x6b, 0x28, 0x00,
+      0x00, 0x00, 0x01, 0xd2, 0x97, 0xb5, 0x48, 0x00,
+      0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x00,
+      // memo length
+      0x00, 0x00, 0x00, 0x00,
+
+      // Subnet ID
+      0x8c, 0x86, 0xd0, 0x7c, 0xd6, 0x02, 0x18, 0x66,
+      0x18, 0x63, 0xe0, 0x11, 0x65, 0x52, 0xdc, 0xcd,
+      0x5b, 0xd8, 0x4c, 0x56, 0x4b, 0xd2, 0x9d, 0x71,
+      0x81, 0xdb, 0xdd, 0xd5, 0xec, 0x61, 0x61, 0x04,
+
+      //chain name length
+      0x00, 0x08,
+
+      //chain name
+      0x45, 0x50, 0x49, 0x43, 0x20, 0x41, 0x56, 0x4d,
+
+      //vm id
+      0x61, 0x76, 0x6d, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+
+      // fxids
+      // num fxids
+      0x00, 0x00, 0x00, 0x01,
+      // fxid
+      0x73, 0x65, 0x63, 0x70, 0x32, 0x35, 0x36, 0x6b,
+      0x31, 0x66, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+
+      // genesis data len
+      0x00, 0x00, 0x00, 0xb0,
+      // genesis data
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0e,
+      0x41, 0x73, 0x73, 0x65, 0x74, 0x41, 0x6c, 0x69,
+      0x61, 0x73, 0x54, 0x65, 0x73, 0x74, 0x00, 0x00,
+      0x05, 0x39, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x1b, 0x66, 0x72,
+      0x6f, 0x6d, 0x20, 0x73, 0x6e, 0x6f, 0x77, 0x66,
+      0x6c, 0x61, 0x6b, 0x65, 0x20, 0x74, 0x6f, 0x20,
+      0x61, 0x76, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x68,
+      0x65, 0x00, 0x0a, 0x54, 0x65, 0x73, 0x74, 0x20,
+      0x41, 0x73, 0x73, 0x65, 0x74, 0x00, 0x04, 0x54,
+      0x45, 0x53, 0x54, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x01, 0xfb, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x01, 0x3c, 0xb7, 0xd3, 0x84,
+      0x2e, 0x8c, 0xee, 0x6a, 0x0e, 0xbd, 0x09, 0xf1,
+      0xfe, 0x88, 0x4f, 0x68, 0x61, 0xe1, 0xb2, 0x9c,
+
+      // SubnetAuth
+      // SubnetAuth TypeID
+      0x00, 0x00, 0x00, 0x0a,
+      // SigIndices length
+      0x00, 0x00, 0x00, 0x01,
+      // address index
+      0x00, 0x00, 0x00, 0x00]);
+
+    const pathPrefix = "44'/9000'/0'";
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
+    // Need to add headers for SubnetID and Sigindices?
+    const prompts = chunkPrompts([
+      {header: 'Sign', body: 'Create Chain'},
+      {header: 'Subnet', body: '24tZhrm8j8GCJRE9PomW8FaeqbgGS4UAQjJnqqn8pq5NwYSYV1'},
+      {header: 'Chain Name', body: 'EPIC AVM'},
+      {header: 'VM ID', body: 'jvYyfQTxGMJLuGWa55kdP2p2zSUYsQ5Raupu4TW34ZAUBAbtq'},
+      {header: 'Genesis Data', body: 'E13A291075FD019F2B78239120ADB3BD9386F863FFFB4DCDEFA1EA3F810EC546'},
+      {header: 'Fee', body: '2000.001 AVAX'}
+    ]).concat([finalizePrompt]);
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
+  });
+
   it('Rejects an add validator transaction if total stake is not sum of stake UTXOs', async function () {
     try {
       const txn = Buffer.from([
@@ -364,7 +593,7 @@ describe('Staking tests', async function () {
         0x00, 0x00, 0x00, 0x64]);
 
       const pathPrefix = "44'/9000'/0'";
-      const pathSuffixes = ["0/0", "0/1", "100/100"];
+      const pathSuffixes = ["0/0", "0/1", "1/100"];
       const prompts = chunkPrompts([
         {header: 'Sign', body: 'Add Validator'},
         {header: 'Transfer', body: '3.999 AVAX to local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n'},
@@ -374,14 +603,8 @@ describe('Staking tests', async function () {
         {header: 'Total Stake', body: '0.000054321 AVAX' },
         {header: 'Stake',body: '2000 AVAX to local18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u'}
       ]);
-      const ui = await flowMultiPrompt(this.speculos, prompts, "Next", "Next");
-      const sigPromise = this.ava.signTransaction(
-        BIPPath.fromString(pathPrefix),
-        pathSuffixes.map(x => BIPPath.fromString(x, false)),
-        txn,
-      );
-      await sigPromise;
-      await ui.promptsPromise;
+
+      await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
     } catch(e) {
       expect(e).has.property('statusCode', 0x9405);
     }
@@ -448,7 +671,7 @@ describe('Staking tests', async function () {
       0xed, 0xa8, 0xeb, 0x30, 0xfb, 0x5a, 0x71, 0x5c,
     ]);
     const pathPrefix = "44'/9000'/0'";
-    const pathSuffixes = ["0/0", "0/1", "100/100"];
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
     const prompts = chunkPrompts([{header: 'Sign', body: 'Add Delegator'},
       {header: 'Transfer', body: '3.999 AVAX to local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n'},
       {header: 'Validator', body: 'NodeID-NFBbbJ4qCmNaCzeW7sxErhvWqvEQMnYcN' },
@@ -458,15 +681,9 @@ describe('Staking tests', async function () {
       {header: 'Stake', body: '2000 AVAX to local18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u'},
       {header: 'Rewards To', body: 'local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n' },
       {header: 'Fee', body: '0.001 AVAX'},
-    ]).concat([[finalizePrompt]]);
-    const ui = await flowMultiPrompt(this.speculos, prompts);
-    const sigPromise = this.ava.signTransaction(
-      BIPPath.fromString(pathPrefix),
-      pathSuffixes.map(x => BIPPath.fromString(x, false)),
-      txn,
-    );
-    await sigPromise;
-    await ui.promptsPromise;
+    ]).concat([finalizePrompt]);
+
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
   });
   it('rejects an add delegator transaction where weight is not sum of stake', async function () {
     try {
@@ -530,23 +747,17 @@ describe('Staking tests', async function () {
         0xed, 0xa8, 0xeb, 0x30, 0xfb, 0x5a, 0x71, 0x5c,
       ]);
       const pathPrefix = "44'/9000'/0'";
-      const pathSuffixes = ["0/0", "0/1", "100/100"];
+      const pathSuffixes = ["0/0", "0/1", "1/100"];
       const prompts = chunkPrompts([{header: 'Sign', body: 'Add Delegator'},
-      {header: 'Transfer', body: '3.999 AVAX to local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n'},
-      {header: 'Validator', body: 'NodeID-NFBbbJ4qCmNaCzeW7sxErhvWqvEQMnYcN' },
-      {header: 'Start time', body: '2020-07-29 22:07:25 UTC' },
-      {header: 'End time', body: '2020-08-28 21:57:26 UTC' },
-      {header: 'Total Stake', body: '0.000054321 AVAX' },
-      {header: 'Stake', body: '2000 AVAX to local18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u'}
+        {header: 'Transfer', body: '3.999 AVAX to local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n'},
+        {header: 'Validator', body: 'NodeID-NFBbbJ4qCmNaCzeW7sxErhvWqvEQMnYcN' },
+        {header: 'Start time', body: '2020-07-29 22:07:25 UTC' },
+        {header: 'End time', body: '2020-08-28 21:57:26 UTC' },
+        {header: 'Total Stake', body: '0.000054321 AVAX' },
+        {header: 'Stake', body: '2000 AVAX to local18jma8ppw3nhx5r4ap8clazz0dps7rv5u00z96u'}
       ]);
-      const ui = await flowMultiPrompt(this.speculos, prompts, "Next", "Next");
-      const sigPromise = this.ava.signTransaction(
-        BIPPath.fromString(pathPrefix),
-        pathSuffixes.map(x => BIPPath.fromString(x, false)),
-        txn,
-      );
-      await sigPromise;
-      await ui.promptsPromise;
+
+      await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
     } catch(e) {
       expect(e).has.property('statusCode', 0x9405);
     }
@@ -633,7 +844,7 @@ describe('Staking tests', async function () {
       0x00, 0x00, 0x00, 0x64]);
 
     const pathPrefix = "44'/9000'/0'";
-    const pathSuffixes = ["0/0", "0/1", "100/100"];
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
     const prompts = chunkPrompts([{header: 'Sign', body: 'Add Validator'},
       {header: 'Transfer', body: '3.999 AVAX to local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n'},
       {header: 'Validator', body: 'NodeID-NFBbbJ4qCmNaCzeW7sxErhvWqvEQMnYcN' },
@@ -645,15 +856,9 @@ describe('Staking tests', async function () {
       {header: 'Rewards To', body: 'local1mg47uqd7stkvqrp57ds7m28txra45u2uzkta8n' },
       {header: 'Delegation Fee', body: '0.01%' },
       {header: 'Fee',body: '0.001 AVAX'}
-    ]).concat([[finalizePrompt]]);
-    const ui = await flowMultiPrompt(this.speculos, prompts);
-    const sigPromise = this.ava.signTransaction(
-      BIPPath.fromString(pathPrefix),
-      pathSuffixes.map(x => BIPPath.fromString(x, false)),
-      txn,
-    );
-    await sigPromise;
-    await ui.promptsPromise;
+    ]).concat([finalizePrompt]);
+
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
   });
   it('can sign a live add validator transaction where some funds are locked', async function () {
     const txn = Buffer.from([
@@ -745,7 +950,7 @@ describe('Staking tests', async function () {
       ]);
 
     const pathPrefix = "44'/9000'/0'";
-    const pathSuffixes = ["0/0", "0/1", "100/100"];
+    const pathSuffixes = ["0/0", "0/1", "1/100"];
     const prompts = chunkPrompts([{header: 'Sign', body: 'Add Validator'},
       {header: 'Transfer', body: '0.5 AVAX to fuji1asxdpfsmah8wqr6m8ymfwse5e4pa9fwnvudmpn'},
       {header: 'Funds locked', body: '0.5 AVAX until 2021-05-31 21:28:00 UTC'},
@@ -758,14 +963,8 @@ describe('Staking tests', async function () {
       {header: 'Rewards To', body: 'fuji1kekq6vfg56qj5vxfhlwzmgyejfxsczqld3kdup'},
       {header: 'Delegation Fee', body: '2%'},
       {header: 'Fee', body: '0 AVAX'}
-    ]).concat([[finalizePrompt]]);
-    const ui = await flowMultiPrompt(this.speculos, prompts);
-    const sigPromise = this.ava.signTransaction(
-      BIPPath.fromString(pathPrefix),
-      pathSuffixes.map(x => BIPPath.fromString(x, false)),
-      txn,
-    );
-    await sigPromise;
-    await ui.promptsPromise;
+    ]).concat([finalizePrompt]);
+
+    await checkSignTransaction(pathPrefix, pathSuffixes, txn, prompts);
   });
 });

@@ -9,6 +9,7 @@
 #include "protocol.h"
 #include "ui.h"
 #include "cx.h"
+#include "hash.h"
 
 #include <string.h>
 
@@ -131,7 +132,7 @@ static size_t next_parse(bool const is_reentry) {
     enum parse_rv rv = PARSE_RV_INVALID;
     BEGIN_TRY {
       TRY {
-        set_next_batch_size(&G.meta_state.prompt, TRANSACTION_PROMPT_MAX_BATCH_SIZE);
+        set_next_batch_size(&G.meta_state.prompt, PROMPT_MAX_BATCH_SIZE);
         rv = parse_evm_txn(&G.state, &G.meta_state);
       }
       FINALLY {
@@ -164,12 +165,15 @@ static size_t next_parse(bool const is_reentry) {
 
     if (rv == PARSE_RV_DONE) {
         PRINTF("Parser signaled done; sending final prompt\n");
-        cx_hash((cx_hash_t *const)&G.tx_hash_state, CX_LAST, NULL, 0, G.final_hash, sizeof(G.final_hash));
+        finish_hash((cx_hash_t *const)&G.tx_hash_state, &G.final_hash);
         PRINTF("G.final_hash: %.*h\n", sizeof(G.final_hash), G.final_hash);
         transaction_complete_prompt();
     }
 
-    PRINTF("Parse error: %d %d %d\n", rv, G.meta_state.input.consumed, G.meta_state.input.length);
+    PRINTF("Parse error: rv=%d consumed=%d length=%d\n",
+      rv,
+      G.meta_state.input.consumed,
+      G.meta_state.input.length);
     THROW(EXC_PARSE_ERROR);
 }
 
